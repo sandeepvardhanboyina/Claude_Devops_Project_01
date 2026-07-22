@@ -1,0 +1,59 @@
+# ---- Terraform ----
+# State files contain secrets in plaintext. Never commit them.
+*.tfstate
+*.tfstate.*
+*.tfstate.backup
+
+# Provider plugins and module caches (large binaries)
+.terraform/
+.terraform.lock.hcl.bak
+
+# Variable files hold account IDs, IPs and key names.
+# The .example files ARE committed as templates.
+*.tfvars
+*.tfvars.json
+!*.tfvars.example
+
+# Saved plan files can contain sensitive values
+*.tfplan
+plan.out
+crash.log
+crash.*.log
+
+# Backend config passed via -backend-config
+backend.hcl
+
+# ---- Secrets & credentials ----
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.ppk
+credentials
+credentials.txt
+.aws/
+
+# ---- Build output ----
+# Generated at build time by scripts/build.sh
+app/build-info.json
+dist/
+build/
+
+# ---- Load testing ----
+# Raw k6 output is large; committed summaries live in reports/*.md
+load-testing/reports/*.json
+load-testing/reports/*.csv
+
+# ---- OS / editor ----
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+*~
+.vscode/
+.idea/
+
+# ---- Node (only if tooling is added later) ----
+node_modules/
+npm-debug.log*
