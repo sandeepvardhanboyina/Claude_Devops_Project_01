@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="claude-first-project — a production-style static site deployed to AWS with Terraform and GitHub Actions.">
+  <title>Home | claude-first-project</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <header class="site-header">
+    <nav class="nav" aria-label="Main navigation">
+      <a class="nav__brand" href="index.html">claude<span>-first-project</span></a>
+      <button class="nav__toggle" aria-expanded="false" aria-controls="nav-menu" aria-label="Toggle navigation">
+        <span></span><span></span><span></span>
+      </button>
+      <ul class="nav__menu" id="nav-menu">
+        <li><a href="index.html" class="is-active" aria-current="page">Home</a></li>
+        <li><a href="about.html">About</a></li>
+        <li><a href="contact.html">Contact</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main id="main">
+    <section class="hero">
+      <div class="container">
+        <p class="hero__eyebrow">Deployed on AWS</p>
+        <h1 class="hero__title">Infrastructure as Code,<br>end to end.</h1>
+        <p class="hero__lead">
+          A static site provisioned by Terraform, served by Nginx across an Auto Scaling
+          Group, balanced by an Application Load Balancer, and shipped by GitHub Actions.
+        </p>
+        <div class="hero__actions">
+          <a class="btn btn--primary" href="about.html">How it works</a>
+          <a class="btn btn--ghost" href="contact.html">Get in touch</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="container section">
+      <h2 class="section__title">The stack</h2>
+      <div class="grid">
+        <article class="card">
+          <h3>Terraform</h3>
+          <p>Six reusable modules — VPC, security groups, IAM, launch template, ALB and
+             Auto Scaling — with remote state in S3 and locking via DynamoDB.</p>
+        </article>
+        <article class="card">
+          <h3>Auto Scaling</h3>
+          <p>Runs a minimum of 1 and a desired 2 instances, scaling out to 4 when CPU
+             passes 70% and back in below 30%.</p>
+        </article>
+        <article class="card">
+          <h3>GitHub Actions</h3>
+          <p>Validates HTML and Terraform, plans the change, builds the artifact, deploys
+             over SSH, then health-checks the load balancer.</p>
+        </article>
+        <article class="card">
+          <h3>Observability</h3>
+          <p>CloudWatch tracks CPU, memory, network and status checks, with alarms wired
+             to the scaling policies.</p>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer__inner">
+      <p>&copy; <span data-year></span> claude-first-project</p>
+      <p class="footer__meta">
+        Last deployed: <time data-deployed-at>loading&hellip;</time>
+        <span data-commit class="footer__commit"></span>
+      </p>
+    </div>
+  </footer>
+
+  <script src="js/main.js"></script>
+</body>
+</html>

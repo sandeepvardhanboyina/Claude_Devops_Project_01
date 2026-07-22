@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Get in touch about claude-first-project.">
+  <title>Contact | claude-first-project</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <header class="site-header">
+    <nav class="nav" aria-label="Main navigation">
+      <a class="nav__brand" href="index.html">claude<span>-first-project</span></a>
+      <button class="nav__toggle" aria-expanded="false" aria-controls="nav-menu" aria-label="Toggle navigation">
+        <span></span><span></span><span></span>
+      </button>
+      <ul class="nav__menu" id="nav-menu">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="about.html">About</a></li>
+        <li><a href="contact.html" class="is-active" aria-current="page">Contact</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main id="main">
+    <section class="page-head">
+      <div class="container">
+        <h1>Contact</h1>
+        <p class="page-head__lead">Questions about the architecture or the pipeline? Send a note.</p>
+      </div>
+    </section>
+
+    <section class="container section section--split">
+      <div>
+        <h2 class="section__title">Send a message</h2>
+        <!--
+          The site is static by design — there is no backend to receive a POST.
+          Submission is handled client-side and shows a confirmation, which keeps
+          the deployment to plain files on Nginx.
+        -->
+        <form class="form" id="contact-form" novalidate>
+          <div class="field">
+            <label for="name">Name</label>
+            <input type="text" id="name" name="name" required autocomplete="name">
+            <p class="field__error" data-error-for="name"></p>
+          </div>
+
+          <div class="field">
+            <label for="email">Email</label>
+            <input type="email" id="email" name="email" required autocomplete="email">
+            <p class="field__error" data-error-for="email"></p>
+          </div>
+
+          <div class="field">
+            <label for="subject">Subject</label>
+            <input type="text" id="subject" name="subject" required>
+            <p class="field__error" data-error-for="subject"></p>
+          </div>
+
+          <div class="field">
+            <label for="message">Message</label>
+            <textarea id="message" name="message" rows="5" required></textarea>
+            <p class="field__error" data-error-for="message"></p>
+          </div>
+
+          <button type="submit" class="btn btn--primary">Send message</button>
+          <p class="form__status" id="form-status" role="status" aria-live="polite"></p>
+        </form>
+      </div>
+
+      <aside class="panel">
+        <h2 class="section__title">Details</h2>
+        <dl class="deflist deflist--compact">
+          <dt>Repository</dt>
+          <dd><code>claude-first-project</code></dd>
+          <dt>Region</dt>
+          <dd>us-east-1</dd>
+          <dt>Serving</dt>
+          <dd>Nginx on Ubuntu 22.04</dd>
+          <dt>Scaling</dt>
+          <dd>1 &rarr; 4 instances</dd>
+        </dl>
+        <p class="panel__note">
+          This server is one of several behind the load balancer. Reload the page and the
+          deployment stamp in the footer may come from a different instance.
+        </p>
+      </aside>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer__inner">
+      <p>&copy; <span data-year></span> claude-first-project</p>
+      <p class="footer__meta">
+        Last deployed: <time data-deployed-at>loading&hellip;</time>
+        <span data-commit class="footer__commit"></span>
+      </p>
+    </div>
+  </footer>
+
+  <script src="js/main.js"></script>
+</body>
+</html>

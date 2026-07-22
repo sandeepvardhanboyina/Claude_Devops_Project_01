@@ -1,0 +1,18 @@
+# Normalise line endings. Authored on Windows, executed on Linux (EC2 user_data,
+# GitHub Actions runners) — CRLF in a shell script causes "bad interpreter" errors.
+* text=auto eol=lf
+
+*.sh      text eol=lf
+*.tpl     text eol=lf
+*.tf      text eol=lf
+*.yml     text eol=lf
+*.yaml    text eol=lf
+*.js      text eol=lf
+*.json    text eol=lf
+*.html    text eol=lf
+*.css     text eol=lf
+*.md      text eol=lf
+
+*.png     binary
+*.jpg     binary
+*.ico     binary

@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="How claude-first-project is built and deployed — architecture, pipeline and infrastructure.">
+  <title>About | claude-first-project</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <header class="site-header">
+    <nav class="nav" aria-label="Main navigation">
+      <a class="nav__brand" href="index.html">claude<span>-first-project</span></a>
+      <button class="nav__toggle" aria-expanded="false" aria-controls="nav-menu" aria-label="Toggle navigation">
+        <span></span><span></span><span></span>
+      </button>
+      <ul class="nav__menu" id="nav-menu">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="about.html" class="is-active" aria-current="page">About</a></li>
+        <li><a href="contact.html">Contact</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main id="main">
+    <section class="page-head">
+      <div class="container">
+        <h1>About this project</h1>
+        <p class="page-head__lead">
+          A learning project built to practise the full DevOps loop: write infrastructure
+          as code, wire a pipeline, deploy automatically, then load test and observe it.
+        </p>
+      </div>
+    </section>
+
+    <section class="container section">
+      <h2 class="section__title">Request path</h2>
+      <p class="prose">
+        A visitor hits the Application Load Balancer, which spreads traffic across healthy
+        EC2 instances in two Availability Zones. Each instance runs Nginx serving static
+        files from <code>/var/www/html</code>. Only the load balancer's security group may
+        reach port 80 on an instance — the instances are never addressed directly.
+      </p>
+
+      <h2 class="section__title">Infrastructure</h2>
+      <dl class="deflist">
+        <dt>VPC</dt>
+        <dd>A dedicated network with public subnets in two Availability Zones, an internet
+            gateway and a shared route table.</dd>
+        <dt>Security groups</dt>
+        <dd>The ALB accepts HTTP from anywhere. Instances accept HTTP from the ALB's group
+            only, and SSH from a single administrator address.</dd>
+        <dt>IAM</dt>
+        <dd>One instance role carrying just two managed policies — CloudWatch agent
+            publishing and SSM access. No wildcards, no long-lived keys.</dd>
+        <dt>Launch template</dt>
+        <dd>Ubuntu 22.04 with IMDSv2 required, an encrypted gp3 root volume, and user data
+            that installs Nginx and the CloudWatch agent.</dd>
+        <dt>Auto Scaling Group</dt>
+        <dd>Minimum 1, desired 2, maximum 4. Health is judged by the load balancer, so a
+            failing web server is replaced even while the instance itself is fine.</dd>
+      </dl>
+
+      <h2 class="section__title">Pipeline</h2>
+      <ol class="steps">
+        <li><strong>Validate</strong> — HTML is linted; Terraform is checked for formatting and validity.</li>
+        <li><strong>Plan</strong> — <code>terraform plan</code> runs and is posted back to the pull request.</li>
+        <li><strong>Build</strong> — the site is stamped with a commit SHA and timestamp, then uploaded as an artifact.</li>
+        <li><strong>Deploy</strong> — the artifact is copied to each instance over SSH and Nginx is reloaded.</li>
+        <li><strong>Verify</strong> — the load balancer is polled until it returns HTTP 200.</li>
+      </ol>
+
+      <h2 class="section__title">Security decisions</h2>
+      <ul class="prose">
+        <li>IMDSv2 is enforced, closing the SSRF path to instance credentials.</li>
+        <li>No credentials in the repository — the pipeline authenticates to AWS via OIDC.</li>
+        <li>Terraform state lives in a private, versioned, encrypted S3 bucket.</li>
+        <li>The backend bucket name is never hardcoded; it is supplied at init time.</li>
+      </ul>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer__inner">
+      <p>&copy; <span data-year></span> claude-first-project</p>
+      <p class="footer__meta">
+        Last deployed: <time data-deployed-at>loading&hellip;</time>
+        <span data-commit class="footer__commit"></span>
+      </p>
+    </div>
+  </footer>
+
+  <script src="js/main.js"></script>
+</body>
+</html>
