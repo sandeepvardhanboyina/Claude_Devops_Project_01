@@ -164,6 +164,17 @@ variable "metrics_namespace" {
   default     = "ClaudeFirstProject"
 }
 
+variable "enable_unhealthy_host_alarm" {
+  description = <<-EOT
+    Create the ALB unhealthy-host alarm. A static switch rather than a check on
+    the ARN suffix, because the suffix is unknown until apply and Terraform
+    cannot size a count from an unknown value. Requires the two ARN suffixes
+    below when true.
+  EOT
+  type        = bool
+  default     = true
+}
+
 variable "alb_arn_suffix" {
   description = "ARN suffix of the load balancer, for the unhealthy-host alarm dimensions."
   type        = string
@@ -171,7 +182,7 @@ variable "alb_arn_suffix" {
 }
 
 variable "target_group_arn_suffix" {
-  description = "ARN suffix of the target group. Leave null to skip the unhealthy-host alarm."
+  description = "ARN suffix of the target group, for the unhealthy-host alarm dimensions."
   type        = string
   default     = null
 }

@@ -42,8 +42,6 @@ resource "aws_autoscaling_group" "this" {
         min_healthy_percentage = 50
         instance_warmup        = tostring(var.health_check_grace_period)
       }
-
-      triggers = ["launch_template"]
     }
   }
 
@@ -227,8 +225,12 @@ resource "aws_cloudwatch_metric_alarm" "memory_high" {
 }
 
 # Any unhealthy target means the ALB has taken a host out of rotation.
+#
+# The count is gated on a static boolean, not on whether the ARN suffix is null.
+# The suffix comes from the ALB module and is unknown until apply, and Terraform
+# cannot decide how many resources to create from a value it does not yet know.
 resource "aws_cloudwatch_metric_alarm" "unhealthy_hosts" {
-  count = var.target_group_arn_suffix == null ? 0 : 1
+  count = var.enable_unhealthy_host_alarm ? 1 : 0
 
   alarm_name        = "${var.name}-unhealthy-hosts"
   alarm_description = "One or more targets are failing the load balancer health check"
