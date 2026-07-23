@@ -1,0 +1,16 @@
+# Backend configuration, kept out of version control so the bucket name is not
+# hardcoded in committed code. Copy to backend.hcl and fill in from the
+# bootstrap output:
+#
+#   cd ../../bootstrap && terraform output backend_config
+#
+# then initialise the dev environment against it:
+#
+#   cd ../environments/dev
+#   terraform init -backend-config=backend.hcl
+
+bucket         = "claude-first-project-tfstate-REPLACE_WITH_ACCOUNT_ID"
+key            = "env/dev/terraform.tfstate"
+region         = "us-east-1"
+dynamodb_table = "claude-first-project-tflock"
+encrypt        = true
