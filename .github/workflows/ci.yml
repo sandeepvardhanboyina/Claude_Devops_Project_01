@@ -1,0 +1,91 @@
+name: CI
+
+# Continuous integration: validate every change before it can reach main.
+#
+# This is the "CI" half of the pipeline (Part 6). It needs no cloud
+# credentials, so it runs on any pull request out of the box:
+#
+#   checkout -> HTML validation -> terraform fmt/validate -> build -> artifact
+#
+# `terraform plan` and the SSH deploy/health-check live in deploy.yml, which
+# needs the GitHub OIDC role and is wired up separately.
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Read-only token is all CI needs; the deploy workflow asks for more.
+permissions:
+  contents: read
+
+# A newer push to the same ref makes older in-flight runs pointless.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  html:
+    name: HTML validation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      # Rules live in .htmlhintrc so the check is the same locally and in CI.
+      - name: Lint HTML (HTMLHint)
+        run: npx --yes htmlhint@1 "app/**/*.html"
+
+  terraform:
+    name: Terraform fmt & validate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.12.2"
+          terraform_wrapper: false
+
+      # Formatting is a hard gate: unformatted HCL fails the build.
+      - name: terraform fmt -check
+        run: terraform fmt -check -recursive terraform/
+
+      # Validate the two root modules. The dev environment references all six
+      # child modules, so validating it transitively validates them too.
+      # -backend=false means no S3/AWS access is needed just to validate.
+      - name: terraform validate
+        run: |
+          for dir in terraform/environments/dev terraform/bootstrap ; do
+            echo "::group::validate $dir"
+            terraform -chdir="$dir" init -backend=false -input=false -no-color
+            terraform -chdir="$dir" validate -no-color
+            echo "::endgroup::"
+          done
+
+  build:
+    name: Build & upload site artifact
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # build.sh reads GITHUB_SHA / GITHUB_RUN_NUMBER / GITHUB_REF_NAME (all set
+      # by Actions automatically) to stamp app/build-info.json, then stages the
+      # site into dist/.
+      - name: Stamp build and stage site
+        run: bash scripts/build.sh
+        env:
+          OUT_DIR: dist
+
+      - name: Upload site artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: site-${{ github.sha }}
+          path: dist/
+          retention-days: 7
+          if-no-files-found: error
