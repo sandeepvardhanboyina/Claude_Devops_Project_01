@@ -1,0 +1,112 @@
+name: Deploy
+
+# Continuous deployment (the "CD" half of Part 6): ship the site to the running
+# EC2 instances after a change lands on main.
+#
+#   AWS auth : GitHub OIDC — a short-lived token exchanged for credentials, so
+#              no long-lived AWS key is ever stored in the repo.
+#   Delivery : SSM Run Command — AWS runs a script on the instances internally,
+#              so no SSH key and no inbound port 22 are needed.
+#   Verify   : health-check.sh polls the ALB until it serves HTTP 200.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# id-token: write lets the job mint the OIDC token AWS exchanges for credentials.
+permissions:
+  id-token: write
+  contents: read
+
+# Never let two deploys overlap.
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy to EC2 via SSM
+    runs-on: ubuntu-latest
+    # Skipped (not failed) until the OIDC role ARN is set as the AWS_ROLE_ARN
+    # repo variable, so the repository stays green before that is configured.
+    if: vars.AWS_ROLE_ARN != ''
+    env:
+      AWS_REGION: ${{ vars.AWS_REGION || 'us-east-1' }}
+      ASG_NAME: claude-first-project-asg
+      ALB_NAME: claude-first-project-alb
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Deploy site to instances via SSM
+        run: |
+          set -euo pipefail
+
+          # The script every targeted instance runs: fetch this exact commit's
+          # site tarball from the public repo, then hand it to remote-deploy.sh.
+          # Actions substitutes the ${{ ... }} values before the shell sees them.
+          REMOTE=$(cat <<'EOF'
+          set -euo pipefail
+          export DEPLOY_SHA='${{ github.sha }}'
+          export DEPLOY_RUN='${{ github.run_number }}'
+          export DEPLOY_REF='${{ github.ref_name }}'
+          cd /tmp
+          rm -rf cfp-deploy && mkdir cfp-deploy
+          curl -fsSL "https://github.com/${{ github.repository }}/archive/${{ github.sha }}.tar.gz" -o cfp-deploy/site.tgz
+          tar xzf cfp-deploy/site.tgz -C cfp-deploy --strip-components=1
+          cd cfp-deploy
+          bash scripts/remote-deploy.sh app
+          EOF
+          )
+
+          # SSM's 'commands' parameter is a JSON array of strings; jq -n wraps the
+          # whole script safely as a single element.
+          PARAMS=$(jq -n --arg s "$REMOTE" '{commands: [$s], executionTimeout: ["600"]}')
+
+          CMD_ID=$(aws ssm send-command \
+            --document-name "AWS-RunShellScript" \
+            --comment "Deploy ${{ github.sha }} (run ${{ github.run_number }})" \
+            --targets "Key=tag:aws:autoscaling:groupName,Values=${ASG_NAME}" \
+            --parameters "$PARAMS" \
+            --query 'Command.CommandId' --output text)
+          echo "SSM command id: $CMD_ID"
+
+          echo "Waiting for the command to finish on all instances..."
+          for _ in $(seq 1 60); do
+            STATUS=$(aws ssm list-commands --command-id "$CMD_ID" --query 'Commands[0].Status' --output text)
+            echo "  status: $STATUS"
+            case "$STATUS" in
+              Success|Failed|Cancelled|TimedOut) break ;;
+            esac
+            sleep 5
+          done
+
+          echo "Per-instance results:"
+          aws ssm list-command-invocations --command-id "$CMD_ID" --details \
+            --query 'CommandInvocations[].{Instance:InstanceId,Status:Status}' --output table
+
+          FINAL=$(aws ssm list-commands --command-id "$CMD_ID" --query 'Commands[0].Status' --output text)
+          if [[ "$FINAL" != "Success" ]]; then
+            echo "::error::SSM deploy finished with status: $FINAL"
+            for iid in $(aws ssm list-command-invocations --command-id "$CMD_ID" --query 'CommandInvocations[].InstanceId' --output text); do
+              echo "----- output from $iid -----"
+              aws ssm get-command-invocation --command-id "$CMD_ID" --instance-id "$iid" \
+                --query '{Status:Status,Stdout:StandardOutputContent,Stderr:StandardErrorContent}' --output text || true
+            done
+            exit 1
+          fi
+          echo "Deploy command succeeded on all instances."
+
+      - name: Health-check the live site through the ALB
+        run: |
+          set -euo pipefail
+          ALB_DNS=$(aws elbv2 describe-load-balancers --names "$ALB_NAME" \
+            --query 'LoadBalancers[0].DNSName' --output text)
+          echo "Checking http://$ALB_DNS"
+          RETRIES=30 INTERVAL=10 bash scripts/health-check.sh "http://$ALB_DNS"
