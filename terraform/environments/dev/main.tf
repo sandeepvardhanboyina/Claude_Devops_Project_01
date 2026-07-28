@@ -58,6 +58,17 @@ module "iam" {
   github_repository        = var.github_repository
   state_bucket_arn         = var.state_bucket_arn
   state_lock_table_arn     = var.state_lock_table_arn
+
+  # GitHub emits immutable-ID OIDC subjects (repo:owner@<id>/repo@<id>:...) for
+  # this repo, not the plain repo:owner/repo:... form, so the trust policy must
+  # match those. Both forms are listed so it keeps working either way. The IDs
+  # are immutable, which makes this stricter than matching on the name alone.
+  github_subject_claims = [
+    "repo:sandeepvardhanboyina@53875142/Claude_Devops_Project_01@1309477333:ref:refs/heads/main",
+    "repo:sandeepvardhanboyina@53875142/Claude_Devops_Project_01@1309477333:pull_request",
+    "repo:sandeepvardhanboyina/Claude_Devops_Project_01:ref:refs/heads/main",
+    "repo:sandeepvardhanboyina/Claude_Devops_Project_01:pull_request",
+  ]
 }
 
 # ---------------------------------------------------------------------------
