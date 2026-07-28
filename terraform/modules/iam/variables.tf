@@ -46,6 +46,17 @@ variable "github_allowed_refs" {
   default     = ["ref:refs/heads/main", "pull_request"]
 }
 
+variable "github_subject_claims" {
+  description = <<-EOT
+    Explicit OIDC subject claims allowed to assume the role, overriding the ones
+    computed from github_repository/github_allowed_refs. Needed when GitHub emits
+    immutable-ID subjects like "repo:owner@<id>/repo@<id>:ref:refs/heads/main".
+    Empty means compute from the repository name.
+  EOT
+  type        = list(string)
+  default     = []
+}
+
 variable "state_bucket_arn" {
   description = "ARN of the S3 bucket holding Terraform state, granted read access for plan runs."
   type        = string

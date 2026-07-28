@@ -79,10 +79,16 @@ data "aws_iam_policy_document" "github_assume_role" {
       values   = ["sts.amazonaws.com"]
     }
 
+    # Some accounts/orgs emit immutable-ID subjects
+    # (repo:owner@<id>/repo@<id>:...) rather than the plain repo:owner/repo:...
+    # form. github_subject_claims lets the environment pin the exact subjects it
+    # observes; when empty it falls back to computing them from the repo name.
     condition {
       test     = "StringLike"
       variable = "token.actions.githubusercontent.com:sub"
-      values   = [for ref in var.github_allowed_refs : "repo:${var.github_repository}:${ref}"]
+      values = length(var.github_subject_claims) > 0 ? var.github_subject_claims : [
+        for ref in var.github_allowed_refs : "repo:${var.github_repository}:${ref}"
+      ]
     }
   }
 }
