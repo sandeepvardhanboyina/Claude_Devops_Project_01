@@ -41,9 +41,11 @@ dist/
 build/
 
 # ---- Load testing ----
-# Raw k6 output is large; committed summaries live in reports/*.md
+# Raw k6 output can be large; ignore it, but keep the small curated per-stage
+# summaries and the markdown reports as committed evidence.
 load-testing/reports/*.json
 load-testing/reports/*.csv
+!load-testing/reports/summary-*.json
 
 # ---- OS / editor ----
 .DS_Store

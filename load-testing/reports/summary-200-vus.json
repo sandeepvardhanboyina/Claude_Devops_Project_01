@@ -1,0 +1,17 @@
+{
+  "stage": "200-vus",
+  "concurrent_users": 200,
+  "duration": "2m",
+  "target": "http://claude-first-project-alb-313830275.us-east-1.elb.amazonaws.com/",
+  "requests_total": 21283,
+  "requests_per_sec": 175.73,
+  "response_time_ms": {
+    "avg": 130.35,
+    "p90": 273.36,
+    "p95": 410.07,
+    "max": 1687.39
+  },
+  "error_rate_pct": 0,
+  "throughput_kb_per_sec": 583.48,
+  "checks_passed_pct": 100
+}
