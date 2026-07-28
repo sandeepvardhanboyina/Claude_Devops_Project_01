@@ -50,9 +50,11 @@ jobs:
 
           # The script every targeted instance runs: fetch this exact commit's
           # site tarball from the public repo, then hand it to remote-deploy.sh.
-          # Actions substitutes the ${{ ... }} values before the shell sees them.
+          # Actions substitutes the expression values before the shell sees them.
           REMOTE=$(cat <<'EOF'
-          set -euo pipefail
+          # SSM runs this under dash (sh), which has no 'set -o pipefail'. There
+          # are no pipelines here anyway; the real work runs under bash below.
+          set -eu
           export DEPLOY_SHA='${{ github.sha }}'
           export DEPLOY_RUN='${{ github.run_number }}'
           export DEPLOY_REF='${{ github.ref_name }}'
