@@ -147,6 +147,21 @@ data "aws_iam_policy_document" "github_deploy" {
     ]
     resources = [var.state_lock_table_arn]
   }
+
+  # Deploy without SSH: the workflow ships the site by running a command on the
+  # instances through SSM Run Command. SendCommand is the only write action; the
+  # rest are the read-only status calls the workflow polls while it waits.
+  statement {
+    sid    = "DeployViaSSM"
+    effect = "Allow"
+    actions = [
+      "ssm:SendCommand",
+      "ssm:ListCommands",
+      "ssm:ListCommandInvocations",
+      "ssm:GetCommandInvocation",
+    ]
+    resources = ["*"]
+  }
 }
 
 resource "aws_iam_role_policy" "github_deploy" {
